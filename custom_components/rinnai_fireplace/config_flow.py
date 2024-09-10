@@ -31,8 +31,7 @@ class RinnaiFireplaceFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
-                # for now only Manual is supported {vol.Required("configure_type"): vol.In(["Discovery", "Manual"])}
-                {vol.Required("configure_type"): vol.In(["Manual"])}
+                {vol.Required("configure_type"): vol.In(["Discovery", "Manual"])}
             ),
             errors=_errors,
         )
@@ -40,12 +39,6 @@ class RinnaiFireplaceFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_discovery(
         self, user_input: dict | list[FoundDevice] | None = None
     ):
-        """Automated Discovery step."""
-        if user_input is None:
-            return self.async_show_form(
-                step_id="discovery",
-                data_schema=vol.Schema({vol.Required("checkme"): bool}),
-            )
         if isinstance(user_input, list):
             usable_devices = user_input
 
@@ -60,21 +53,13 @@ class RinnaiFireplaceFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
             return await self.async_step_configure(usable_devices)
 
-        if "checkme" in user_input:
-            if user_input["checkme"]:
-                task = self.hass.async_create_task(
-                    discover(self.hass), f"{DOMAIN}_discovery"
-                )
+        task = self.hass.async_create_task(discover(self.hass), f"{DOMAIN}_discovery")
 
-                try:
-                    devices = await task
-                except Exception:
-                    return self.async_abort(reason="discovery_failed")
-                return await self.async_step_discovery(user_input=devices)
-            else:
-                return await self.async_step_discovery()
-        else:
-            return await self.async_step_manual()
+        try:
+            devices = await task
+        except Exception:
+            return self.async_abort(reason="discovery_failed")
+        return await self.async_step_discovery(user_input=devices)
 
     async def async_step_manual(self, user_input=None):
         """Manual Discovery."""
