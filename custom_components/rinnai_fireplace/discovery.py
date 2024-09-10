@@ -66,4 +66,7 @@ async def discover(hass: HomeAssistant) -> list[FoundDevice]:
     )
     sniffer.start()
 
+    # Wrap the sniffer.join() with run_in_executor to prevent it from blocking.
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, sniffer.join)
     return devices
