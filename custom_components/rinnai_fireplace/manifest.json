@@ -15,5 +15,5 @@
     "scapy>=2.4.3"
   ],
   "issue_tracker": "https://github.com/raedur/rinnai-fireplace-ha/issues",
-  "version": "0.0.1"
+  "version": "0.0.2"
 }
