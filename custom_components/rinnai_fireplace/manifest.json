@@ -2,7 +2,7 @@
   "domain": "rinnai_fireplace",
   "name": "RinnaiFireplace",
   "codeowners": [
-    "@ludeeus"
+    "@raedur"
   ],
   "config_flow": true,
   "dependencies": [

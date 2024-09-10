@@ -35,8 +35,6 @@ If you want to contribute to this please read the [Contribution guidelines](CONT
 ***
 
 [rinnai_fireplace]: https://github.com/raedur/rinnai-fireplace-ha
-[buymecoffee]: https://www.buymeacoffee.com/ludeeus
-[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
 [commits-shield]: https://img.shields.io/github/commit-activity/y/raedur/rinnai-fireplace-ha.svg?style=for-the-badge
 [commits]: https://github.com/raedur/rinnai-fireplace-ha/commits/main
 [discord]: https://discord.gg/Qa5fW2R
