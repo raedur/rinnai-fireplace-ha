@@ -88,6 +88,8 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
 
     MIN_FAN_MODE = 0
     MAX_FAN_MODE = 5
+    MAX_TEMP = 30
+    MIN_TEMP = 16
 
     @property
     def current_temperature(self) -> float | None:
@@ -167,16 +169,22 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
         await asyncio.sleep(1)
         await self.coordinator.async_request_refresh()
 
-    async def async_set_temperature(self, **kwargs: dict[str, Any]) -> None:
+    async def async_set_temperature(self, kwargs: dict[str, Any]) -> None:
         """Set new target temperature."""
-        if temperature := kwargs.get(ATTR_TEMPERATURE) is None:
+        temperature = kwargs.get(ATTR_TEMPERATURE)
+        if temperature is None:
             msg = "Temperature arg missing"
             raise IntegrationError(msg)
-        if temperature is not int:
-            msg = f"Temperature not int, got: {temperature}"
+        try:
+            temperature_int = int(temperature)
+        except ValueError as ve:
+            msg = f"Unsupported temperature: {temperature}"
+            raise IntegrationError(msg) from ve
+        if temperature_int < self.MIN_TEMP or temperature_int > self.MAX_TEMP:
+            msg = f"Temperature: {temperature} outside of supported range"
             raise IntegrationError(msg)
         await self.coordinator.config_entry.runtime_data.client.async_set_target_temp(
-            temp=int(temperature)
+            temp=temperature_int
         )
         # sleep for one second as otherwise we get empty packets
         await asyncio.sleep(1)
