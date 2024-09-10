@@ -121,6 +121,16 @@ class RinnaiFireplaceApiClient:
             raise RinnaiFireplaceApiClientError(msg)
         return result.group(1)
 
+    async def async_get_version(self) -> str:
+        """Get version from the API."""
+        data = self._api_wrapper(self._host, "RINNAI_10,E")
+        pattern = r"RINNAI_10,([^,]*)"
+        result = re.search(pattern, data)
+        if result is None:
+            msg = f"Cannot parse version from payload: {data}"
+            raise RinnaiFireplaceApiClientError(msg)
+        return result.group(1)
+
     async def async_set_eco(self, eco: Eco) -> None:
         """Set economy mode."""
         self._api_wrapper(self._host, f"RINNAI_35,{eco.value},E")

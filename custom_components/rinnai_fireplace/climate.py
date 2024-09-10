@@ -17,11 +17,21 @@ from homeassistant.components.climate.const import (
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.exceptions import IntegrationError
 
+from .const import (
+    ATTR_DEVICE_ID,
+    ATTR_DEVICE_IP,
+    ATTR_DEVICE_NAME,
+    CONF_DEVICE_NAME,
+    CONF_ID,
+    CONF_IP,
+)
+
 from .api import Eco, OperationalMode, OperationalState
 from .entity import RinnaiFireplaceEntity
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.device_registry import DeviceInfo
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
     from .coordinator import RinnaiFireplaceDataUpdateCoordinator
@@ -44,6 +54,7 @@ async def async_setup_entry(
     """Set up the climate platform."""
     async_add_entities(
         RinnaiFireplaceClimate(
+            entry,
             coordinator=entry.runtime_data.coordinator,
             entity_description=entity_description,
         )
@@ -63,6 +74,7 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
 
     def __init__(
         self,
+        entry: RinnaiFireplaceConfigEntry,
         coordinator: RinnaiFireplaceDataUpdateCoordinator,
         entity_description: ClimateEntityDescription,
     ) -> None:
@@ -90,6 +102,15 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
     MAX_FAN_MODE = 5
     MAX_TEMP = 30
     MIN_TEMP = 16
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the extra attributes."""
+        return {
+            ATTR_DEVICE_ID: self.coordinator.config_entry.data[CONF_ID],
+            ATTR_DEVICE_IP: self.coordinator.config_entry.data[CONF_IP],
+            ATTR_DEVICE_NAME: self.coordinator.device_name,
+        }
 
     @property
     def current_temperature(self) -> float | None:
@@ -169,7 +190,7 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
         await asyncio.sleep(1)
         await self.coordinator.async_request_refresh()
 
-    async def async_set_temperature(self, kwargs: dict[str, Any]) -> None:
+    async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:

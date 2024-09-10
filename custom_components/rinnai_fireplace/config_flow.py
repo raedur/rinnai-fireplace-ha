@@ -8,7 +8,7 @@ from homeassistant import config_entries, data_entry_flow
 from .api import (
     RinnaiFireplaceApiClient,
 )
-from .const import CORE_DEVICE_NAME, DOMAIN
+from .const import CONF_DEVICE_NAME, CORE_DEVICE_NAME, DOMAIN, CONF_ID, CONF_IP
 from .discovery import FoundDevice, discover
 
 
@@ -106,5 +106,9 @@ class RinnaiFireplaceFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         # for some reason theres no way to register multiple discovered devices so we're doing the first one that's discovered
         return self.async_create_entry(
             title=CORE_DEVICE_NAME.format(name=device.name),
-            data={},
+            data={
+                CONF_ID: device.id,
+                CONF_IP: device.ip,
+                CONF_DEVICE_NAME: device.name,
+            },
         )

@@ -9,6 +9,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.loader import async_get_loaded_integration
 
 from .api import RinnaiFireplaceApiClient
+from .const import CONF_IP
 from .coordinator import RinnaiFireplaceDataUpdateCoordinator
 from .data import RinnaiFireplaceData
 
@@ -28,13 +29,9 @@ async def async_setup_entry(
     entry: RinnaiFireplaceConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
-    coordinator = RinnaiFireplaceDataUpdateCoordinator(
-        hass=hass,
-    )
+    coordinator = RinnaiFireplaceDataUpdateCoordinator(hass=hass, config_entry=entry)
     entry.runtime_data = RinnaiFireplaceData(
-        client=RinnaiFireplaceApiClient(
-            "192.168.1.141",
-        ),
+        client=RinnaiFireplaceApiClient(entry.data[CONF_IP]),
         integration=async_get_loaded_integration(hass, entry.domain),
         coordinator=coordinator,
     )

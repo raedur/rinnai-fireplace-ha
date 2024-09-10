@@ -11,7 +11,7 @@ from .api import (
     RinnaiFireplaceApiClientError,
     RinnaiFireplaceStatus,
 )
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN, LOGGER, CONF_DEVICE_NAME
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -25,17 +25,28 @@ class RinnaiFireplaceDataUpdateCoordinator(
     """Class to manage fetching data from the device."""
 
     config_entry: RinnaiFireplaceConfigEntry
+    device_name: str | None
+    sw_version: str | None
 
     def __init__(
-        self,
-        hass: HomeAssistant,
+        self, hass: HomeAssistant, config_entry: RinnaiFireplaceConfigEntry
     ) -> None:
         """Initialize."""
+        self.config_entry = config_entry
         super().__init__(
             hass=hass,
             logger=LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=15),
+        )
+        self.device_name = None
+        self.sw_version = None
+
+    async def _async_setup(self) -> None:
+        """Do initialization logic."""
+        self.device_name = await self.config_entry.runtime_data.client.async_get_name()
+        self.sw_version = (
+            await self.config_entry.runtime_data.client.async_get_version()
         )
 
     async def _async_update_data(self) -> Any:
