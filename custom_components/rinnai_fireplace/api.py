@@ -186,6 +186,7 @@ class RinnaiFireplaceApiClient:
         """Send request to the Deivce."""
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(10)
                 s.connect((host, self.PORT))
                 LOGGER.info("Sending", payload.encode("ascii"))
                 s.sendall(payload.encode("ascii"))
