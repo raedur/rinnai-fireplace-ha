@@ -8,7 +8,7 @@ from homeassistant import config_entries, data_entry_flow
 from .api import (
     RinnaiFireplaceApiClient,
 )
-from .const import CONF_DEVICE_NAME, CORE_DEVICE_NAME, DOMAIN, CONF_ID, CONF_IP
+from .const import CONF_DEVICE_NAME, CONF_ID, CONF_IP, CORE_DEVICE_NAME, DOMAIN
 from .discovery import FoundDevice, discover
 
 

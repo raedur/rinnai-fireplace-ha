@@ -19,7 +19,6 @@ class RinnaiFireplaceEntity(CoordinatorEntity[RinnaiFireplaceDataUpdateCoordinat
         super().__init__(coordinator)
         self._attr_unique_id = coordinator.config_entry.entry_id
         self.coordinator = coordinator
-        print(self._attr_device_info)
 
     @property
     def device_info(self) -> DeviceInfo:

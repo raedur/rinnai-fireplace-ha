@@ -17,21 +17,18 @@ from homeassistant.components.climate.const import (
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.exceptions import IntegrationError
 
+from .api import Eco, OperationalMode, OperationalState
 from .const import (
     ATTR_DEVICE_ID,
     ATTR_DEVICE_IP,
     ATTR_DEVICE_NAME,
-    CONF_DEVICE_NAME,
     CONF_ID,
     CONF_IP,
 )
-
-from .api import Eco, OperationalMode, OperationalState
 from .entity import RinnaiFireplaceEntity
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.device_registry import DeviceInfo
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
     from .coordinator import RinnaiFireplaceDataUpdateCoordinator
@@ -54,7 +51,6 @@ async def async_setup_entry(
     """Set up the climate platform."""
     async_add_entities(
         RinnaiFireplaceClimate(
-            entry,
             coordinator=entry.runtime_data.coordinator,
             entity_description=entity_description,
         )
@@ -74,7 +70,6 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
 
     def __init__(
         self,
-        entry: RinnaiFireplaceConfigEntry,
         coordinator: RinnaiFireplaceDataUpdateCoordinator,
         entity_description: ClimateEntityDescription,
     ) -> None:
@@ -93,6 +88,8 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
         self._attr_hvac_mode = HVACMode.OFF
         self._attr_temperature_unit = UnitOfTemperature.CELSIUS
         self._attr_preset_modes = Presets._member_names_
+        self._attr_max_temp = self.MAX_TEMP
+        self._attr_min_temp = self.MIN_TEMP
         self._attr_target_temperature_step = 1
         self._attr_fan_modes = [
             f"{i}" for i in range(self.MIN_FAN_MODE, self.MAX_FAN_MODE + 1)
