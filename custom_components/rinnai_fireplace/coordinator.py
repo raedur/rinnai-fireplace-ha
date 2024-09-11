@@ -11,7 +11,7 @@ from .api import (
     RinnaiFireplaceApiClientError,
     RinnaiFireplaceStatus,
 )
-from .const import DOMAIN, LOGGER, CONF_DEVICE_NAME
+from .const import DOMAIN, LOGGER
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -52,6 +52,11 @@ class RinnaiFireplaceDataUpdateCoordinator(
     async def _async_update_data(self) -> Any:
         """Update data via library."""
         try:
-            return await self.config_entry.runtime_data.client.async_get_status()
+            status = await self.config_entry.runtime_data.client.async_get_status()
         except RinnaiFireplaceApiClientError as exception:
             raise UpdateFailed(exception) from exception
+        else:
+            if status is not None:
+                return status
+            # if we get None, return previous status
+            return self.data

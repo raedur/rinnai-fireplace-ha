@@ -127,6 +127,9 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
                 return HVACMode.FAN_ONLY
             case OperationalMode.TEMP:
                 return HVACMode.HEAT
+        if self.coordinator.data.operation_state == OperationalState.STANDBY:
+            return HVACMode.OFF
+        return None
 
     @property
     def preset_mode(self) -> str | None:
@@ -152,22 +155,42 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
-        mode = None
         match hvac_mode:
             case HVACMode.OFF:
-                mode = OperationalState.STANDBY
+                await self.coordinator.config_entry.runtime_data.client.async_set_op_state(
+                    state=OperationalState.STANDBY
+                )
             case HVACMode.HEAT:
-                mode = OperationalState.ON
+                # we need to turn on
+                await self.coordinator.config_entry.runtime_data.client.async_set_op_state(
+                    state=OperationalState.ON
+                )
+                await asyncio.sleep(1)
+
+                # then send the temperature to go to TEMP mode
+                temp = self.target_temperature
+                if temp is None:
+                    # if we don't know the temp, set it to min
+                    temp = self.MIN_TEMP
+                await self.async_set_temperature(**{ATTR_TEMPERATURE: temp})
+            case HVACMode.FAN_ONLY:
+                # we need to turn on
+                await self.coordinator.config_entry.runtime_data.client.async_set_op_state(
+                    state=OperationalState.ON
+                )
+                await asyncio.sleep(1)
+                # then send the fan level to go to FAN mode
+                fan_mode = self.fan_mode
+                if fan_mode is None:
+                    # if we don't know the temp, set it to min
+                    fan_mode = str(self.MIN_FAN_MODE)
+                await self.async_set_fan_mode(fan_mode)
             case _:
                 msg = f"Unsupported HVACMode: {hvac_mode}"
                 raise IntegrationError(msg)
-
-        await self.coordinator.config_entry.runtime_data.client.async_set_op_state(
-            state=mode
-        )
         # sleep for one second as otherwise we get empty packets
         await asyncio.sleep(1)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_refresh()
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
@@ -185,7 +208,7 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
         )
         # sleep for one second as otherwise we get empty packets
         await asyncio.sleep(1)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_refresh()
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
@@ -206,7 +229,7 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
         )
         # sleep for one second as otherwise we get empty packets
         await asyncio.sleep(1)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_refresh()
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set new preset mode."""
@@ -225,4 +248,4 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
         await self.coordinator.config_entry.runtime_data.client.async_set_eco(eco=eco)
         # sleep for one second as otherwise we get empty packets
         await asyncio.sleep(1)
-        await self.coordinator.async_request_refresh()
+        await self.coordinator.async_refresh()

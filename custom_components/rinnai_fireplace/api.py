@@ -63,6 +63,7 @@ def parse_operational_state(state: int) -> OperationalState:
 class OperationalMode(Enum):
     """OperationalMode of the device."""
 
+    STANDBY = "00"
     FLAME = "01"
     """Fixed flame level mode."""
     TEMP = "02"
@@ -147,15 +148,14 @@ class RinnaiFireplaceApiClient:
         """Set flame level."""
         self._api_wrapper(self._host, f"RINNAI_32,{flame_level:0>2X},E")
 
-    async def async_get_status(self) -> RinnaiFireplaceStatus:
+    async def async_get_status(self) -> RinnaiFireplaceStatus | None:
         """Get data from the API."""
         data = self._api_wrapper(self._host, "RINNAI_22,E")
         pattern = r"RINNAI_22,(.*),E"
         result = re.search(pattern, data)
-        result = re.search(pattern, data)
         if result is None:
-            msg = f"Cannot parse name from payload: {data}"
-            raise RinnaiFireplaceApiClientError(msg)
+            # Sometimes we get empty payloads :(
+            return None
         data = result.group(1).split(",")
         main_power_switch = int(data[0], 16)
         operation_state = parse_operational_state(int(data[1], 16))
