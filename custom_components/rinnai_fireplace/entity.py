@@ -5,8 +5,6 @@ from __future__ import annotations
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from custom_components.rinnai_fireplace.climate import RinnaiFireplaceClimate
-
 from .const import MANUFACTURER
 from .coordinator import RinnaiFireplaceDataUpdateCoordinator
 
