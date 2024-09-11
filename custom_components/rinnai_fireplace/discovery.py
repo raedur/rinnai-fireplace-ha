@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Optional
 from attr import dataclass
 from homeassistant.components import network
 from scapy.all import AsyncSniffer, Packet
-from scapy.layers.inet import UDP
+from scapy.layers.inet import IP, UDP
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -55,7 +55,7 @@ async def discover(hass: HomeAssistant) -> list[FoundDevice]:
             return None
         device_id = result.group(1)
         device_name = result.group(2)
-        ip = packet[UDP].src
+        ip = packet[IP].src
         devices.append(FoundDevice(device_id, device_name, ip))
 
     sniffer = AsyncSniffer(
