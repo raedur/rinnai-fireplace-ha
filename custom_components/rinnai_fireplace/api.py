@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
-import socket
 from enum import Enum
 from typing import Any
 
@@ -114,7 +114,7 @@ class RinnaiFireplaceApiClient:
 
     async def async_get_name(self) -> str:
         """Get data from the API."""
-        data = self._api_wrapper(self._host, "RINNAI_27,E")
+        data = await self._api_wrapper(self._host, "RINNAI_27,E")
         pattern = r"RINNAI_27,([^,]*)"
         result = re.search(pattern, data)
         if result is None:
@@ -124,7 +124,7 @@ class RinnaiFireplaceApiClient:
 
     async def async_get_version(self) -> str:
         """Get version from the API."""
-        data = self._api_wrapper(self._host, "RINNAI_10,E")
+        data = await self._api_wrapper(self._host, "RINNAI_10,E")
         pattern = r"RINNAI_10,([^,]*)"
         result = re.search(pattern, data)
         if result is None:
@@ -134,23 +134,23 @@ class RinnaiFireplaceApiClient:
 
     async def async_set_eco(self, eco: Eco) -> None:
         """Set economy mode."""
-        self._api_wrapper(self._host, f"RINNAI_35,{eco.value},E")
+        await self._api_wrapper(self._host, f"RINNAI_35,{eco.value},E")
 
     async def async_set_op_state(self, state: OperationalState) -> None:
         """Set operational state."""
-        self._api_wrapper(self._host, f"RINNAI_34,{state.value},E")
+        await self._api_wrapper(self._host, f"RINNAI_34,{state.value},E")
 
     async def async_set_target_temp(self, temp: int) -> None:
         """Set target temperature."""
-        self._api_wrapper(self._host, f"RINNAI_33,{temp:0>2X},E")
+        await self._api_wrapper(self._host, f"RINNAI_33,{temp:0>2X},E")
 
     async def async_set_flame_level(self, flame_level: int) -> None:
         """Set flame level."""
-        self._api_wrapper(self._host, f"RINNAI_32,{flame_level:0>2X},E")
+        await self._api_wrapper(self._host, f"RINNAI_32,{flame_level:0>2X},E")
 
     async def async_get_status(self) -> RinnaiFireplaceStatus | None:
         """Get data from the API."""
-        data = self._api_wrapper(self._host, "RINNAI_22,E")
+        data = await self._api_wrapper(self._host, "RINNAI_22,E")
         pattern = r"RINNAI_22,(.*),E"
         result = re.search(pattern, data)
         if result is None:
@@ -188,22 +188,26 @@ class RinnaiFireplaceApiClient:
             wifi_strength=wifi_strength,
         )
 
-    def _api_wrapper(
+    async def _api_wrapper(
         self,
         host: str,
         payload: str,
     ) -> Any:
-        """Send request to the Deivce."""
+        """Send request to the Device."""
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(10)
-                s.connect((host, self.PORT))
-                LOGGER.debug("Sending: %s", payload.encode("ascii"))
-                s.sendall(payload.encode("ascii"))
-                data = s.recv(1024)
-                LOGGER.debug("Received: %s", repr(data))
-                return data.decode()
-        except Exception as exception:  # pylint: disable=broad-except
+            reader, writer = await asyncio.open_connection(host, self.PORT)
+
+            LOGGER.debug("Sending: %s", payload.encode("ascii"))
+            writer.write(payload.encode("ascii"))
+
+            data = await reader.read(1024)
+            LOGGER.debug("Received: %s", repr(data))
+
+            writer.close()
+            await writer.wait_closed()
+
+            return data.decode()
+        except Exception as exception:
             msg = f"Error calling api - {exception}"
             raise RinnaiFireplaceApiClientError(
                 msg,
