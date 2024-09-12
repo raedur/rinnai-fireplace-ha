@@ -112,16 +112,22 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
     @property
     def current_temperature(self) -> float | None:
         """Return the current temperature."""
+        if self.coordinator.data is None:
+            return None
         return self.coordinator.data.room_temp
 
     @property
     def target_temperature(self) -> float | None:
         """Return the temperature we try to reach."""
+        if self.coordinator.data is None:
+            return None
         return self.coordinator.data.set_temp
 
     @property
     def hvac_mode(self) -> HVACMode | None:
         """Return hvac operation ie. heat, cool mode."""
+        if self.coordinator.data is None:
+            return None
         match self.coordinator.data.operation_mode:
             case OperationalMode.FLAME:
                 return HVACMode.FAN_ONLY
@@ -134,6 +140,8 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
     @property
     def preset_mode(self) -> str | None:
         """Return the current preset mode, e.g., home, away, temp."""
+        if self.coordinator.data is None:
+            return None
         match self.coordinator.data.economy:
             case Eco.ON:
                 return "ECO"
@@ -143,6 +151,8 @@ class RinnaiFireplaceClimate(RinnaiFireplaceEntity, ClimateEntity):
     @property
     def fan_mode(self) -> str | None:
         """Return the fan setting."""
+        if self.coordinator.data is None:
+            return None
         return str(self.coordinator.data.flame_level)
 
     async def async_turn_off(self) -> None:
