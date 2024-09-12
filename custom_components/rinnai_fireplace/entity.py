@@ -26,8 +26,7 @@ class RinnaiFireplaceEntity(CoordinatorEntity[RinnaiFireplaceDataUpdateCoordinat
             identifiers={
                 (
                     self.coordinator.config_entry.domain,
-                    self.coordinator.device_name
-                    or self.coordinator.config_entry.entry_id,
+                    self.coordinator.config_entry.entry_id,
                 ),
             },
             manufacturer=MANUFACTURER,
