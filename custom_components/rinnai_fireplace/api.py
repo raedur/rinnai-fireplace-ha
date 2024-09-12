@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from functools import wraps
 import re
 from enum import Enum
 from typing import Any
@@ -14,6 +15,12 @@ from .const import LOGGER
 
 class RinnaiFireplaceApiClientError(Exception):
     """Exception to indicate a general API error."""
+
+
+class RinnaiFireplaceApiClientTimeoutError(
+    RinnaiFireplaceApiClientError,
+):
+    """Exception to indicate a timeout error."""
 
 
 class RinnaiFireplaceApiClientProtocolError(
@@ -188,16 +195,16 @@ class RinnaiFireplaceApiClient:
             wifi_strength=wifi_strength,
         )
 
-    async def _api_wrapper(
-        self,
-        host: str,
-        payload: str,
-    ) -> Any:
+    MAX_RETRIES = 3
+    TIMEOUT_SECS = 1
+
+    async def _api_wrapper(self, host: str, payload: str, attempt: int = 1) -> Any:
         """Send request to the Device."""
         try:
-            reader, writer = await asyncio.open_connection(host, self.PORT)
+            conn = asyncio.open_connection(host, self.PORT)
+            reader, writer = await asyncio.wait_for(conn, timeout=self.TIMEOUT_SECS)
 
-            LOGGER.debug("Sending: %s", payload.encode("ascii"))
+            LOGGER.debug("Sending: %s to %s", payload.encode("ascii"), host)
             writer.write(payload.encode("ascii"))
 
             data = await reader.read(1024)
@@ -206,9 +213,21 @@ class RinnaiFireplaceApiClient:
             writer.close()
             await writer.wait_closed()
 
-            return data.decode()
+            response = data.decode()
+        except TimeoutError as te:
+            # try again up to 3 times
+            if attempt > self.MAX_RETRIES:
+                raise RinnaiFireplaceApiClientTimeoutError from te
+            return await self._api_wrapper(host, payload, attempt + 1)
         except Exception as exception:
             msg = f"Error calling api - {exception}"
             raise RinnaiFireplaceApiClientError(
                 msg,
             ) from exception
+        else:
+            if response == "" or response is None:
+                # try again up to 3 times
+                if attempt > self.MAX_RETRIES:
+                    raise RinnaiFireplaceApiClientTimeoutError from None
+                return await self._api_wrapper(host, payload, attempt + 1)
+            return response
